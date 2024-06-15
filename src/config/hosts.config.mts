@@ -14,7 +14,7 @@ export const hostsConfig: AnyObject = {
             name: 'Linux',
             path: '/etc',
             copyShell: 'cp -f',
-            flushDns: 'nscd restart',
+            flushDns: '/etc/init.d/nscd restart',
         },
         win32: {
             name: 'Windows',
@@ -47,7 +47,7 @@ export const githubUrls: string[] = [
 
 export const ipAddressBaseUrl: string = 'https://sites.ipaddress.com/';
 
-export const { platform } = { platform: 'win32' }
+export const { platform } = process
 
 export const { path, flushDns, copyShell } = hostsConfig.osMap[platform]
 

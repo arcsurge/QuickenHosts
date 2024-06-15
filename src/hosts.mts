@@ -163,9 +163,18 @@ async function hostsUpdate() {
     }
     cmd(flushDns, { name: 'flushDns' }).then((_) => {
         console.log(chalk.green('Local hosts updated successfully!'));
+    }).catch(e => {
+        console.error(e.error);
     });
 }
 
-hostsUpdate().catch(error => {
-    console.error(error);
+async function main() {
+    try {
+        await hostsUpdate();
+    } catch (e: Error | any) {
+        console.error(e);
+    }
+}
+
+main().then(() => {
 });
