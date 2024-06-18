@@ -44,7 +44,7 @@ function connect(options: Options, sequence: number, callback: (error: Error | n
         callback(null, {sequence, time});
     });
     // 处理套接字错误
-    socket.on('error', (error) => {
+    socket.on('error', (error: Error) => {
         // 销毁套接字
         socket.destroy();
         // 调用回调函数并传递错误和无穷大时间
@@ -76,14 +76,8 @@ function _options(options: Partial<Options> & Pick<Options, 'address'> | string)
         };
         // 检查输入是否是一个对象
     } else if (typeof options === 'object' && options !== null) {
-        // 检查 'address' 属性是否是一个字符串
-        if (typeof options.address === 'string') {
-            // 返回输入对象
-            return options;
-            // 如果 'address' 属性缺失或不是一个字符串，则抛出错误
-        } else {
-            throw new Error('无效的选项：address 缺失或不是一个字符串');
-        }
+        // 返回输入对象
+        return options;
         // 如果输入不是字符串也不是对象，则抛出错误
     } else {
         throw new Error('无效的选项：必须是一个对象或字符串');
@@ -91,11 +85,11 @@ function _options(options: Partial<Options> & Pick<Options, 'address'> | string)
 }
 
 /**
- * 根据选项和结果构建 ping 结果的摘要。
+ * 根据选项和结果构建 index 结果的摘要。
  *
  * @param options - 包含地址、端口和尝试次数的选项。
- * @param results - ping 结果的数组。
- * @returns ping 结果的摘要。
+ * @param results - index 结果的数组。
+ * @returns index 结果的摘要。
  */
 function build(options: Pick<Options, 'address' | 'port' | 'attempts'>, results: Result[]): Summary {
     // 过滤掉结果中的 Infinity 时间
@@ -127,7 +121,7 @@ function build(options: Pick<Options, 'address' | 'port' | 'attempts'>, results:
  *                   错误（如果没有错误发生，则为null，否则为Error对象），
  *                   以及Ping结果的汇总数据。
  */
-function ping(options: Partial<Options> & Pick<Options, 'address'> | string, callback: (error: Error | null, data: Summary | null) => void): void {
+function index(options: Partial<Options> & Pick<Options, 'address'> | string, callback: (error: Error | null, data: Summary | null) => void): void {
     const ops = _options(options)
     // 如果未提供选项，则设置默认选项
     const defaults: Options = {address: 'localhost', port: 80, attempts: 10, timeout: 5000};
@@ -149,8 +143,8 @@ function ping(options: Partial<Options> & Pick<Options, 'address'> | string, cal
         if (results.length < (options.attempts || 0)) {
             try {
                 connect(options as Options, results.length, handle);
-            } catch (error: Error | any) {
-                callback(error, null);
+            } catch (error) {
+                callback(error as Error, null);
             }
             return;
         }
@@ -161,16 +155,16 @@ function ping(options: Partial<Options> & Pick<Options, 'address'> | string, cal
     // 发起第一次Ping尝试
     try {
         connect(options as Options, 0, handle);
-    } catch (error: Error | any) {
-        callback(error, null);
+    } catch (error) {
+        callback(error as Error, null);
     }
 }
 
 /**
- * 异步地对服务器进行多次 ping 操作，并返回结果的汇总。
- * @param options - 可选的对象，包含要 ping 的服务器地址、端口、尝试次数和超时时间。
- * @returns 一个 Promise，在 ping 操作结束时解析为 ping 结果的汇总。
- * @throws 如果在 ping 过程中发生错误，则抛出错误。
+ * 异步地对服务器进行多次 index 操作，并返回结果的汇总。
+ * @param options - 可选的对象，包含要 index 的服务器地址、端口、尝试次数和超时时间。
+ * @returns 一个 Promise，在 index 操作结束时解析为 index 结果的汇总。
+ * @throws 如果在 index 过程中发生错误，则抛出错误。
  */
 async function pingAsync(options: Partial<Options> & Pick<Options, 'address'> | string): Promise<Summary> {
     const ops = _options(options)
@@ -183,7 +177,7 @@ async function pingAsync(options: Partial<Options> & Pick<Options, 'address'> | 
     };
     options = {...defaults, ...ops};
 
-    // 创建一个包含多个 ping 尝试的 Promise 数组
+    // 创建一个包含多个 index 尝试的 Promise 数组
     const promises: Promise<Result>[] = Array.from({length: options.attempts!}, (_, sequence) =>
         new Promise<Result>((resolve, reject) => {
             // 连接到服务器并根据结果解析或拒绝 Promise
@@ -200,14 +194,14 @@ async function pingAsync(options: Partial<Options> & Pick<Options, 'address'> | 
     try {
         // 等待所有 Promise 结束并过滤掉被拒绝的 Promise
         const results = await Promise.allSettled(promises);
-        const filteredResults = results.map((r, i) => r.status === 'fulfilled' ? r.value : {
+        const filteredResults = results.map((r: PromiseSettledResult<Result>, i: number) => r.status === 'fulfilled' ? r.value : {
             sequence: i,
             time: Infinity
         });
-        // 构建并返回 ping 结果的汇总
+        // 构建并返回 index 结果的汇总
         return build(options as Pick<Options, 'address' | 'port' | 'attempts'>, filteredResults);
     } catch (error) {
-        // 如果在 ping 过程中发生错误，则抛出错误
+        // 如果在 index 过程中发生错误，则抛出错误
         throw new Error(`在 pingAsync 中发生错误：${error}`);
     }
 }
@@ -217,13 +211,13 @@ async function pingAsync(options: Partial<Options> & Pick<Options, 'address'> | 
  *
  * @param options - 探测的选项。可以是一个具有至少 `address` 属性的部分 `Options` 对象，或者是一个表示 `address` 属性的字符串。
  * @returns 一个解析为 `true` 表示主机可达，`false` 表示不可达的 Promise。
- * @throws 如果在 ping 过程中发生错误，则抛出错误。
+ * @throws 如果在 index 过程中发生错误，则抛出错误。
  */
 const probeAsync = async (options: Partial<Options> & Pick<Options, 'address'> | string): Promise<boolean> => {
     try {
         // 从选项中提取 `address` 属性，并使用其他属性的默认值创建一个新的 `Options` 对象。
         const opts = _options(options);
-        // 执行一次 ping 请求。
+        // 执行一次 index 请求。
         const result = await pingAsync({...opts, attempts: 1});
         // 检查结果是否有效。如果不是有效的结果，则记录错误并返回 false。
         if (result) {
@@ -233,24 +227,24 @@ const probeAsync = async (options: Partial<Options> & Pick<Options, 'address'> |
             return false;
         }
     } catch (error) {
-        // 记录在 ping 过程中发生的任何错误，并重新抛出错误。
+        // 记录在 index 过程中发生的任何错误，并重新抛出错误。
         console.error('在 pingAsync 期间发生了错误：', error);
         throw new Error('在 pingAsync 期间发生了错误');
     }
 };
 
 /**
- * 检查网络地址是否可用，通过发送 ping 请求来实现。
- * @param options - 包含 ping 请求选项的对象。
- * @param callback - 用于处理 ping 请求结果的回调函数。
+ * 检查网络地址是否可用，通过发送 index 请求来实现。
+ * @param options - 包含 index 请求选项的对象。
+ * @param callback - 用于处理 index 请求结果的回调函数。
  * @throws 如果处理选项或调用回调函数时出现错误。
  */
 const probe = (options: Partial<Options> & Pick<Options, 'address'> | string, callback: (err: Error | null, available: boolean) => void): void => {
     try {
         // 从 options 中提取 'address' 属性，并使用默认值创建一个新的 options 对象。
         const opts = _options(options);
-        // 发送带有提供的选项的 ping 请求。
-        ping({...opts, attempts: 1}, (err, r) => {
+        // 发送带有提供的选项的 index 请求。
+        index({...opts, attempts: 1}, (err, r) => {
             try {
                 let result = false;
                 if (r) {
@@ -258,7 +252,7 @@ const probe = (options: Partial<Options> & Pick<Options, 'address'> | string, ca
                 } else {
                     console.error('pingAsync 返回了 null 或 undefined');
                 }
-                // 调用回调函数，并传递 ping 请求的结果。
+                // 调用回调函数，并传递 index 请求的结果。
                 callback(err, result);
             } catch (error) {
                 // 记录调用回调函数时出现的任何错误。
@@ -274,6 +268,6 @@ const probe = (options: Partial<Options> & Pick<Options, 'address'> | string, ca
 export {
     probeAsync,
     probe,
-    ping,
+    index,
     pingAsync
 }

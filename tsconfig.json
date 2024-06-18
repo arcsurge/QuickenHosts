@@ -1,7 +1,10 @@
 {
     "compilerOptions": {
+        "baseUrl": ".",
+        "outDir": "dist",
+        "declaration": true,
+        "noImplicitAny": true,
         "allowSyntheticDefaultImports": true,
-        "baseUrl": "./",
         "esModuleInterop": true,
         "isolatedModules": true,
         "jsx": "preserve",
@@ -9,33 +12,34 @@
             "ESNext",
             "DOM"
         ],
-        "module": "ESNext",
+        "module": "CommonJS",
         "moduleResolution": "Node",
-        "noEmit": true,
+        "paths": {
+            "@/*": [
+                "src/*"
+            ]
+        },
         "resolveJsonModule": true,
         "skipLibCheck": true,
         "strict": true,
         "target": "ESNext",
         "types": [
-            "node"
+            "@types/node",
+            "utools-api-types"
         ],
         "allowJs": true,
         "useDefineForClassFields": true
     },
+    "include": ["**/*"],
+    "files": [
+        "./utools/plugin.json"
+    ],
     // /.[tj]sx?$/, // .ts, .tsx, .js, .jsx
-    "include": [
-        "src/**/*.js",
-        "src/**/*.ts",
-        "src/**/*.d.ts",
-        "src/**/*.tsx",
-        "src/**/*.vue"
-    ],
     "exclude": [
-        "node_modules"
+        "node_modules",
+        "dist"
     ],
-    "references": [
-        {
-            "path": "./tsconfig.node.json"
-        }
-    ]
+    "references": [{
+        "path": "./tsconfig.node.json"
+    }]
 }

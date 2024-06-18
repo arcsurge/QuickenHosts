@@ -1,4 +1,5 @@
-import { LOG_LEVEL } from "../config/constants.mjs";
+import { LOG_LEVEL } from "@/config/constants";
+import * as console from "node:console";
 
 // 日志等级和对应的名称
 // 0"debug" 1"log",2"info",3"warn",4"error"

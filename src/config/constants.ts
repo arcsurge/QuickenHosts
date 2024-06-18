@@ -1,4 +1,4 @@
-import { AnyObject } from "./types.mjs";
+import { AnyObject } from "@/types/global";
 
 export const LOG_LEVEL: string = 'log';
 

@@ -1,6 +1,6 @@
-import { AnyObject } from "../config/types.mjs";
-import { ContentType } from "../config/constants.mjs";
-import { mergeDeep } from "./globalUtil.mjs";
+import { AnyObject } from "@/types/global";
+import { ContentType } from "@/config/constants";
+import { mergeDeep } from "@/utils/globalUtil";
 
 /**
  * 请求
@@ -9,7 +9,7 @@ import { mergeDeep } from "./globalUtil.mjs";
  * @param config
  * @returns { Promise<any> }
  */
-export async function request(path: string | URL | Request, data: {} = {}, config = {}): Promise<any> {
+export async function request(path: string | URL | Request, data: AnyObject, config = {}): Promise<any> {
     /**
      * 转化请求参数
      * @param data
@@ -34,7 +34,7 @@ export async function request(path: string | URL | Request, data: {} = {}, confi
     // 如果是get请求
     if (cfg.method === 'GET') {
         // 转换拼接get参数
-        let param = transform(data);
+        const param = transform(data);
         if (param) path += `?${param}`;
     } else if (cfg.headers["Content-type"] === ContentType.form) {
         cfg.body = transform(data);

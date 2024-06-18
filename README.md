@@ -8,7 +8,7 @@
     ```
 2. 运行
     ```shell
-    npm run dev
+    npm run script
     ```
 
 # 关于

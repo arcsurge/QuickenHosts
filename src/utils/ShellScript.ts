@@ -1,8 +1,11 @@
-import { exec } from '../../public/sudo-prompt'
-import { AnyObject } from "../config/types.mjs";
+import { AnyObject } from "@/types/global";
+import { getModules } from "@/assets/script/module";
+
+const { exec } = getModules();
+
 const cmd = (cmdStr: string, options: AnyObject) => {
     return new Promise((resolve, reject) => {
-        exec(cmdStr, options, (error, stdout, stderr) => {
+        exec(cmdStr, options, (error: Error, stdout: string, stderr: string) => {
             if (error) {
                 return reject({ error, data: stdout })
             } else if (stderr) {

@@ -575,16 +575,7 @@ function windowsWriteCommandScript(instance, end) {
 function windowsWriteExecuteScript(instance, end) {
     let script = []
     script.push('@echo off')
-    script.push(
-        'call "' +
-      instance.pathCommand +
-      '"' +
-      ' > "' +
-      instance.pathStdout +
-      '" 2> "' +
-      instance.pathStderr +
-      '"'
-    )
+    script.push('call "' + instance.pathCommand + '"' + ' > "' + instance.pathStdout + '" 2> "' + instance.pathStderr + '"')
     script.push('(echo %ERRORLEVEL%) > "' + instance.pathStatus + '"')
     script = script.join('\r\n')
     node.fs.writeFile(instance.pathExecute, script, 'utf-8', end)

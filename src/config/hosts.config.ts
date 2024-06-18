@@ -1,4 +1,5 @@
-import { AnyObject } from "./types.mjs";
+import { AnyObject } from "@/types/global";
+import { getModules } from "@/assets/script/module";
 
 export const hostsConfig: AnyObject = {
     filename: 'hosts',
@@ -8,19 +9,19 @@ export const hostsConfig: AnyObject = {
             name: 'MacOS',
             path: '/etc',
             copyShell: 'cp -f',
-            flushDns: 'killall -HUP mDNSResponder',
+            flushDns: 'killall -HUP mDNSResponder'
         },
         linux: {
             name: 'Linux',
             path: '/etc',
             copyShell: 'cp -f',
-            flushDns: '/etc/init.d/nscd restart',
+            flushDns: '/etc/init.d/nscd restart'
         },
         win32: {
             name: 'Windows',
             path: 'C:/Windows/System32/drivers/etc',
             copyShell: 'copy',
-            flushDns: 'ipconfig /flushdns',
+            flushDns: 'ipconfig /flushdns'
         }
     }
 }
@@ -47,7 +48,9 @@ export const githubUrls: string[] = [
 
 export const ipAddressBaseUrl: string = 'https://sites.ipaddress.com/';
 
-export const { platform } = process
+const { process } = getModules();
+
+export const { platform } = process;
 
 export const { path, flushDns, copyShell } = hostsConfig.osMap[platform]
 

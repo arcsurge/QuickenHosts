@@ -1,0 +1,19 @@
+{
+    "pluginName": "Hosts网络加速",
+    "version": "0.1.1",
+    "description": "Hosts网络加速",
+    "author": "ArcSurge",
+    "preload": "preload.js",
+    "logo": "logo.png",
+    "features": [
+        {
+            "code": "quicken",
+            "explain": "启动Hosts网络加速工具",
+            "cmds": [
+                "加速",
+                "Hosts",
+                "Quicken"
+            ]
+        }
+    ]
+}
