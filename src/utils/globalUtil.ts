@@ -1,5 +1,5 @@
 import { AnyObject } from "@/types/global";
-import { logger } from "@/assets/script/module";
+import { logger } from "@/utils/JConsole";
 
 function mergeDeep(target: AnyObject, source: AnyObject): AnyObject {
     // 遍历源对象中的所有属性
@@ -24,6 +24,7 @@ function mergeDeep(target: AnyObject, source: AnyObject): AnyObject {
     return target;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function retrySync(fn: (...args: any[]) => any, retries: number, delay: number, ...args: any[]) {
     let attempts = retries;
     logger.debug(`Starting execution, you have a total of ${retries} retry attempts.`);

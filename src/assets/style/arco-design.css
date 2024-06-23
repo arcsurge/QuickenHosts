@@ -1,0 +1,16 @@
+.arco-overlay-message ul.arco-message-list li.arco-message {
+    border-radius: var(--border-radius-medium) !important;
+}
+
+.arco-modal-container .arco-modal-wrapper .arco-modal.setting-modal {
+    border-radius: 0 !important;
+}
+
+.textarea.arco-textarea-wrapper {
+    border: none !important;
+}
+
+.delete-confirm-modal.arco-modal div.arco-modal-footer {
+    margin-top: 10px;
+    text-align: right !important;
+}

@@ -1,18 +1,32 @@
-import { AnyObject } from "@/types/global";
-import { JConsole } from "@/utils/JConsole";
+import { quickenConfigs } from "@/config/hosts.config";
+import { getIpAddress } from "@/assets/data/data";
 
-export function getModules(): AnyObject {
+export interface Modules {
+    path: typeof import('node:path'),
+    fs: typeof import('fs'),
+    process: typeof import('node:process'),
+    exec: typeof import('public/sudo-prompt').exec,
+    pingAsync: typeof import('public/ping').pingAsync
+}
+
+export function getModules(): Modules {
     if (typeof window !== 'undefined' && window.tools) {
         return window.tools;
     } else {
         return {
-            process,
-            exec: require("/public/sudo-prompt").exec,
+            process: require("node:process"),
+            exec: require("public/sudo-prompt").exec,
             path: require("node:path"),
-            pingAsync: require("/public/ping").pingAsync,
+            pingAsync: require("public/ping").pingAsync,
             fs: require("fs")
         }
     }
 }
 
-export const logger = new JConsole(console);
+export function getQuickenConfigs() {
+    if (typeof window !== 'undefined' && window.tools) {
+        return getIpAddress();
+    } else {
+        return quickenConfigs;
+    }
+}

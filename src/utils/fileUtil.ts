@@ -1,10 +1,9 @@
-import { copyShell } from "@/config/hosts.config";
 import { AnyObject } from "@/types/global";
-import { cmd } from "@/utils/ShellScript";
 import { getModules } from "@/assets/script/module";
-
-const { fs } = getModules();
-
+import { cmd } from "@/utils/ShellScript";
+import { copyDir, copyFile } from "@/config/hosts.config";
+import { logger } from "@/utils/JConsole";
+const { fs } = getModules()
 export function read(path: string): Promise<string> {
     return new Promise((resolve, reject) => {
         let data = '';
@@ -20,7 +19,7 @@ export function read(path: string): Promise<string> {
     });
 }
 
-export function write(path: string, context: string, options: AnyObject = {}) {
+export function write(path: string, context: string, options: AnyObject = {}): Promise<boolean> {
     return new Promise((resolve, reject) => {
         const write = fs.createWriteStream(path, {
             flags: 'w',
@@ -36,18 +35,52 @@ export function write(path: string, context: string, options: AnyObject = {}) {
     });
 }
 
-export function copy(source: string, target: string, cover: boolean = false): Promise<boolean> {
+export function copy(source: string, target: string, ops?: { cover?: boolean, admin?: boolean }): Promise<boolean> {
+    const defaults = { cover: false, admin: false };
+    const options = {...defaults, ...ops};
     return new Promise((resolve, reject) => {
         if (!fs.existsSync(source)) {
             return reject(new Error(`source file: [${source}] no such file or directory`));
         }
-        if (!cover && fs.existsSync(target)) {
+        if (!options?.cover && fs.existsSync(target)) {
             return resolve(true);
         }
-        cmd(`${copyShell} ${source} ${target}`, { admin: true, name: 'copy' }).then(() => {
+        const stats = fs.statSync(source);
+        let copyShell = `${copyFile} ${source} ${target}`;
+        if (stats.isDirectory()) {
+            copyShell = `${copyDir} ${source} ${target}`;
+        }
+        logger.log("run copy: ", copyShell);
+        cmd(`${copyShell}`, { admin: options?.admin, name: 'copy' }).then(() => {
             return resolve(true);
         }).catch(reason => {
             return reject(reason.error);
+        });
+    });
+}
+
+export function remove(source: string): Promise<boolean> {
+    return new Promise((resolve, reject) => {
+        if (!fs.existsSync(source)) {
+            return resolve(true);
+        }
+        const stats = fs.statSync(source);
+        fs.rm(source, { recursive: stats.isDirectory() }, (error) => {
+            if (error) {
+                return reject(error);
+            }
+            return resolve(true);
+        });
+    });
+}
+
+export function rename(source: string, target: string): Promise<boolean> {
+    return new Promise((resolve, reject) => {
+        fs.rename(source, target, (error) => {
+            if (error) {
+                return reject(error);
+            }
+            return resolve(true);
         });
     });
 }

@@ -2,11 +2,16 @@
     "name": "quicken-hosts",
     "version": "0.1.0",
     "private": true,
-    "main": "dist/index.js",
-    "types": "dist/index.d.ts",
     "scripts": {
-        "compile": "tsc && npx tsc-alias",
-        "script": "tsx src/assets/script/hosts.ts"
+        "dev": "vite",
+        "build": "vue-tsc --noEmit && vite build",
+        "preview": "vite preview",
+        "typecheck": "vue-tsc --noEmit",
+        "lint:fix": "eslint . --fix",
+        "lint:stylelint": "stylelint \"**/*.{css,scss,vue,html}\" --fix",
+        "ts:compile": "npx tsc && npx tsc-alias",
+        "ts:run": "npx tsx src/assets/script/hosts.ts",
+        "deploy": "npx tsx bin/deploy.ts"
     },
     "files": [
         "dist/",
@@ -18,13 +23,35 @@
         "name": "ArcSurge"
     },
     "devDependencies": {
-        "@types/node": "^20.14.2",
+        "@arco-design/web-vue": "^2.55.3",
+        "@eslint/js": "^9.5.0",
+        "@nabla/vite-plugin-eslint": "^2.0.4",
+        "@types/node": "^20.14.5",
+        "@typescript-eslint/eslint-plugin": "^7.13.1",
+        "@typescript-eslint/parser": "^7.13.1",
+        "@vitejs/plugin-vue": "^5.0.5",
+        "eslint": "^8.57.0",
+        "eslint-plugin-vue": "^9.26.0",
+        "globals": "^15.6.0",
+        "stylelint": "^16.6.1",
+        "stylelint-config-html": "^1.1.0",
+        "stylelint-config-recess-order": "^5.0.1",
+        "stylelint-config-recommended-vue": "^1.5.0",
+        "stylelint-config-standard": "^36.0.0",
         "tsc-alias": "^1.8.10",
-        "tsx": "^4.10.5",
+        "tsx": "^4.15.6",
         "typescript": "^5.4.5",
-        "utools-api-types": "^5.0.0"
+        "typescript-eslint": "^7.13.1",
+        "unplugin-auto-import": "^0.17.6",
+        "unplugin-vue-components": "^0.27.0",
+        "utools-api-types": "^5.0.0",
+        "vite": "^5.3.1",
+        "vite-plugin-top-level-await": "^1.4.1",
+        "vue-eslint-parser": "^9.4.3",
+        "vue-tsc": "^2.0.21"
     },
     "dependencies": {
-        "moment": "^2.30.1"
+        "moment": "^2.30.1",
+        "vue": "^3.4.29"
     }
 }

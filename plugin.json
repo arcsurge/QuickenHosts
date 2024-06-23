@@ -3,15 +3,21 @@
     "version": "0.1.1",
     "description": "Hosts网络加速",
     "author": "ArcSurge",
+    "main": "index.html",
     "preload": "preload.js",
-    "logo": "logo.png",
+    "logo": "assets/logo.png",
     "features": [
         {
+            "code": "default",
+            "explain": "启动 Hosts网络加速工具",
+            "cmds": [
+                "Hosts"
+            ]
+        }, {
             "code": "quicken",
             "explain": "启动Hosts网络加速工具",
             "cmds": [
                 "加速",
-                "Hosts",
                 "Quicken"
             ]
         }

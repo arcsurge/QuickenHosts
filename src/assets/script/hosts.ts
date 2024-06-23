@@ -3,39 +3,20 @@ import { headers } from "@/config/constants";
 import {
     endStr,
     flushDns,
-    githubUrls,
     hostsConfig,
     ipAddressBaseUrl,
     path as hostsPath,
     startStr
 } from '@/config/hosts.config';
-import { cmd } from "@/utils/ShellScript";
-import { request } from "@/utils/httpUtil";
-import { lJust, retrySync } from "@/utils/globalUtil";
+import { HostsData, HostsGroup, QuickenGroup } from "@/types/global";
+import { getModules, getQuickenConfigs } from "@/assets/script/module";
 import { copy, read, write } from "@/utils/fileUtil";
-import { HostsData } from "@/types/global";
-import { getModules, logger } from "@/assets/script/module";
+import { retrySync, lJust } from "@/utils/globalUtil";
+import { cmd } from "@/utils/ShellScript";
+import { getOptimalIp, isIP, request } from "@/utils/httpUtil";
+import { logger } from "@/utils/JConsole";
 
-const { path, pingAsync } = getModules();
-
-async function getOptimalIp(ips: string[]) {
-    type PingResult = {
-        address: string,
-        avg: number;
-    };
-    if (ips.length === 1) {
-        return ips[0];
-    }
-    const results = await Promise.allSettled(ips.map(ip => pingAsync(ip).then((r: PingResult) => ({
-        address: ip,
-        avg: Number.isNaN(r.avg) ? Infinity : r.avg
-    }))));
-
-    // 过滤掉失败的ping请求
-    return results.filter((r: PromiseSettledResult<PingResult>) => r.status === 'fulfilled')
-        .map(r => (r as PromiseFulfilledResult<PingResult>).value)
-        .reduce((prev: PingResult, current: PingResult) => (prev.avg < current.avg) ? prev : current).address;
-}
+const { path } = getModules();
 
 function extractIPAddresses(inputString: string) {
     const combinedRegex = /<div[^>]*id="tabpanel-dns-a"[^>]*>([\s\S]*?)<\/div>/;
@@ -50,64 +31,54 @@ function extractIPAddresses(inputString: string) {
     // return ipMatches || [];
 }
 
-function validateIP(ip: string): "IPv4" | "IPv6" | "Neither" {
-    // IPv4地址的正则表达式
-    const ipv4Regex = /^((2(5[0-5]|[0-4]\d))|[0-1]?\d{1,2})(\.((2(5[0-5]|[0-4]\d))|[0-1]?\d{1,2})){3}$/;
-    // IPv6地址的正则表达式
-    const ipv6Regex = /^([\da-fA-F]{1,4}:){7}[\da-fA-F]{1,4}$/;
-
-    if (ipv4Regex.test(ip)) {
-        return "IPv4";
-    } else if (ipv6Regex.test(ip)) {
-        return "IPv6";
-    } else {
-        return "Neither";
-    }
-}
-
 function resolveUrl(host: string): string {
     return ipAddressBaseUrl + host;
 }
 
 async function getIPAddresses(host: string): Promise<string> {
-    return await retrySync(async (h) => {
-        const htmlContent = await request(resolveUrl(h), {}, { headers });
+    return await retrySync(async (website) => {
+        const htmlContent = await request(resolveUrl(website), {}, { headers });
         const ipAddresses = extractIPAddresses(htmlContent);
         const ips = Array.from(new Set(ipAddresses));
         if (!ips || ips.length === 0) {
-            throw new Error(h + 'ip not found!');
+            throw new Error(`[${website}]' ip not found!'`);
         }
         return getOptimalIp(ips);
     }, 3, 1000, host);
 }
 
 async function getHostsData() {
-    const promises = githubUrls.map(url => getIPAddresses(url));
-    const results = await Promise.allSettled(promises);
-    const hosts: HostsData[] = [];
-    results.forEach((result, index) => {
-        if (result.status === 'fulfilled') {
-            const r = validateIP(result.value);
-            if (['IPv4', 'IPv6'].includes(r)) {
-                hosts.push({
-                    name: githubUrls[index],
-                    ip: result.value
-                });
+    const groupHosts = await Promise.all(getQuickenConfigs().map(async (group: QuickenGroup) => {
+        const promises = group.list.map(url => getIPAddresses(url));
+        const results = await Promise.allSettled(promises);
+        const hosts: HostsData[] = [];
+        results.forEach((result, index) => {
+            if (result.status === 'fulfilled') {
+                if (isIP(result.value)) {
+                    hosts.push({
+                        name: group.list[index],
+                        ip: result.value
+                    });
+                } else {
+                    logger.error(`URL ${group.list[index]} rejected with reason: than IP`);
+                }
             } else {
-                logger.error(`URL ${githubUrls[index]} rejected with reason: than IP`);
+                logger.error(`URL ${group.list[index]} rejected with reason: ${result.reason}`);
             }
-        } else {
-            logger.error(`URL ${githubUrls[index]} rejected with reason: ${result.reason}`);
-        }
-    });
-    logger.debug(hosts);
-    return hosts;
+        });
+        return {
+            name: group.name,
+            hosts
+        };
+    }));
+    logger.debug(JSON.stringify(groupHosts));
+    return groupHosts;
 }
 
-function hostsBackup() {
+function hostsBackup(): Promise<boolean> {
     return new Promise((resolve, reject) => {
         const { filename, backup } = hostsConfig;
-        copy(path.resolve(hostsPath, filename), path.resolve(hostsPath, backup)).then((data: boolean) => {
+        copy(path.resolve(hostsPath, filename), path.resolve(hostsPath, backup), { admin: true }).then((data: boolean) => {
             logger.log(data ? 'Local hosts backup successfully!' : 'Local hosts backup failed!');
             resolve(data);
         }).catch(e => {
@@ -117,10 +88,11 @@ function hostsBackup() {
     });
 }
 
-async function hostsRestore() {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+async function hostsRestore(): Promise<boolean> {
     const { filename, backup } = hostsConfig;
     try {
-        return await copy(path.resolve(hostsPath, backup), path.resolve(hostsPath, filename));
+        return await copy(path.resolve(hostsPath, backup), path.resolve(hostsPath, filename), { admin: true });
     } catch (e) {
         logger.error(e as Error);
         return false;
@@ -137,13 +109,20 @@ async function getHosts(): Promise<string> {
     }
 }
 
-async function setHosts(context: string) {
+function setHosts(context: string): Promise<boolean> {
     const hostsFile = path.resolve(hostsPath, hostsConfig.filename);
-    await write(hostsFile, context);
+    return write(hostsFile, context);
 }
 
-function buildHosts(hosts: HostsData[], joinStr = '\n'): string {
-    return hosts.map((host: HostsData) => lJust(host.ip, 20) + host.name).join(joinStr);
+function buildHosts(hostsGroups: HostsGroup[], joinStr = '\n'): string {
+    if (!hostsGroups || hostsGroups.length === 0) return '';
+    return hostsGroups.map((item: HostsGroup) => {
+        if (!item.hosts || item.hosts.length === 0) return '';
+        return `#---- ${item.name} ----${joinStr}${item.hosts.map((host: HostsData) => lJust(host.ip, 20) + host.name).join(joinStr)}${joinStr}`;
+    }).filter((item: string) => item.trim().length > 0).join(joinStr);
+}
+function checkData(data: string) {
+    if (!data || data.trim().length < 1) throw Error('获取数据失败，请检查配置或网络设置！')
 }
 
 async function hostsUpdate(): Promise<boolean> {
@@ -156,13 +135,15 @@ async function hostsUpdate(): Promise<boolean> {
         const hostsContent = await getHosts();
         const lineEndMatch = /(\r\n|\n|\r)/.exec(hostsContent);
         const lineEndStr = lineEndMatch ? lineEndMatch[0] : '\n';
-        const utime = moment().format('YYYY-MM-DD HH:mm:ss');
         const hostsData = await getHostsData();
         const newHostsData: string = buildHosts(hostsData, lineEndStr);
-        const newContent = `${startStr}${lineEndStr}${lineEndStr}${newHostsData}${lineEndStr}${lineEndStr}# Update time: ${utime}${lineEndStr}${lineEndStr}${endStr}`;
-        const regMatchQuicken = hostsContent.match(new RegExp(`${startStr}([\\s\\S]*)# Update time[\\s\\S]*${endStr}`));
-        if (regMatchQuicken) {
-            const oldHosts = regMatchQuicken ? regMatchQuicken[1].trim() : '';
+        logger.debug('newHostsData', newHostsData);
+        checkData(newHostsData);
+        const utime = moment().format('YYYY-MM-DD HH:mm:ss');
+        const newContent = `${startStr}${lineEndStr}${lineEndStr}${newHostsData}${lineEndStr}# Update time: ${utime}${lineEndStr}${lineEndStr}${endStr}`;
+        const oldHostsRegMatch = hostsContent.match(new RegExp(`${startStr}([\\s\\S]*)# Update time[\\s\\S]*${endStr}`));
+        if (oldHostsRegMatch) {
+            const oldHosts = oldHostsRegMatch ? oldHostsRegMatch[1].trim() : '';
             const needUpdate = oldHosts !== newHostsData.trim();
             logger.debug(needUpdate);
             if (!needUpdate) {
@@ -201,19 +182,19 @@ function main(): Promise<boolean> {
     });
 }
 
-export { getHosts, main };
+export { getHosts, setHosts, main };
 
 (async () => {
     if (typeof window === 'undefined') {
         main().then(data => {
-            logger.log('Update hosts', data);
+            logger.log('Quicken hosts', data);
             if (data) {
-                logger.info('Update success.');
+                logger.info('Quicken success.');
             } else {
-                logger.error('Update failed.');
+                logger.error('Quicken failed.');
             }
         }).catch(e => {
-            logger.error(`Update failed.`, e);
+            logger.error(`Quicken failed.`, e);
         });
     }
 })();

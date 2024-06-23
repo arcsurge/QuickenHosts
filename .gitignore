@@ -13,3 +13,4 @@ yarn-error.log
 
 # ignore package-lock if generated (project uses yarn, not npm)
 package-lock.json
+.eslintcache

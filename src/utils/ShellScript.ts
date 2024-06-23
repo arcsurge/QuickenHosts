@@ -5,7 +5,7 @@ const { exec } = getModules();
 
 const cmd = (cmdStr: string, options: AnyObject) => {
     return new Promise((resolve, reject) => {
-        exec(cmdStr, options, (error: Error, stdout: string, stderr: string) => {
+        exec(cmdStr, options, (error, stdout, stderr) => {
             if (error) {
                 return reject({ error, data: stdout })
             } else if (stderr) {

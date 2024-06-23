@@ -1,0 +1,15 @@
+root = true
+
+[*]
+charset = utf-8
+indent_style = space
+indent_size = 4
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[{*.htm,*.html,*.sht,*.shtm,*.shtml,.vue}]
+ij_html_space_after_tag_name = true
+ij_html_keep_indents_on_empty_lines = true
+ij_html_attribute_wrap = off
+ij_html_add_new_line_before_tags = unset

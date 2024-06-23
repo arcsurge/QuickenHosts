@@ -31,13 +31,15 @@
         "useDefineForClassFields": true
     },
     "include": ["**/*"],
-    "files": [
-        "./utools/plugin.json"
-    ],
+    "files": ["plugin.json"],
     // /.[tj]sx?$/, // .ts, .tsx, .js, .jsx
     "exclude": [
+        "dist",
+        "target",
         "node_modules",
-        "dist"
+        "vite.config.mts",
+        "src/main.ts",
+        "eslint.config.mjs"
     ],
     "references": [{
         "path": "./tsconfig.node.json"

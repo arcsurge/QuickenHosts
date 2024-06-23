@@ -1,9 +1,9 @@
-import { AnyObject } from "@/types/global";
+import { Modules } from "@/assets/script/module";
 
 export {};
 
 declare global {
     interface Window {
-        tools: AnyObject;
+        tools: Modules;
     }
 }
