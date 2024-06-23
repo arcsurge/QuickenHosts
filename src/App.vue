@@ -17,6 +17,7 @@ provide("enterAction", data);
 window.utools.onPluginEnter((action: UtoolsAction) => {
     logger.debug('on plugin enter', action);
     data.action = action;
+    document.body.setAttribute('arco-theme', window.utools.isDarkColors() ? 'dark' : '')
 })
 
 </script>
