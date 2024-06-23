@@ -1,4 +1,4 @@
-import { lJust, splitLines } from "@/utils/globalUtil";
+import { splitLines } from "@/utils/globalUtil";
 import { logger } from "@/utils/JConsole";
 
 export function initEditor(textarea: HTMLInputElement, numbers: HTMLElement) {

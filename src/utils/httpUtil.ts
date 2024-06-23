@@ -2,7 +2,6 @@ import { AnyObject } from "@/types/global";
 import { ContentType } from "@/config/constants";
 import { mergeDeep } from "@/utils/globalUtil";
 import { getModules } from "@/assets/script/module";
-import { logger } from "@/utils/JConsole";
 
 const { pingAsync } = getModules();
 
